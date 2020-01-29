@@ -190,23 +190,31 @@ async function stopNode(node) {
 function getCurrentVersion(tempNode) {
   return new Promise((resolve, reject) => {
     const node = tempNode ? getTempNodeFile() : getNodeFile()
+
+    function internalReject() {
+      return reject(new Error('cannot resolve node version'))
+    }
+
     try {
-      exec(
-        `"${node}" --version`,
-        {windowsHide: true},
-        (err, stdout, stderr) => {
-          if (err) {
-            return reject(new Error(stderr))
-          }
-
-          const m = stdout.match(nodeVersionRegex)
-          if (m && m.length && semver.valid(m[0])) {
-            return resolve(semver.clean(m[0]))
-          }
-
-          return reject(new Error('cannot resolve node version'))
+      const nodeVersion = spawn(`"${node}" --version`)
+      nodeVersion.stdout.on('data', data => {
+        const str = data.toString()
+        const m = str.match(nodeVersionRegex)
+        if (m && m.length && semver.valid(m[0])) {
+          return resolve(semver.clean(m[0]))
         }
-      )
+        return internalReject()
+      })
+
+      nodeVersion.stderr.on('data', () => internalReject())
+
+      nodeVersion.on('exit', code => {
+        if (code) {
+          return internalReject()
+        }
+      })
+
+      nodeVersion.on('error', internalReject)
     } catch (e) {
       return reject(e)
     }
