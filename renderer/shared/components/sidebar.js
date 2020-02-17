@@ -173,6 +173,14 @@ function Nav() {
         <NavItem href="/settings" icon={<i className="icon icon--settings" />}>
           {t('Settings')}
         </NavItem>
+        <NavItem
+          href="/ads/list"
+          icon={
+            <img src="/static/ads-icn.svg" alt="ads icon" className="icon" />
+          }
+        >
+          Ads
+        </NavItem>
       </List>
       <style jsx>{`
         nav {
